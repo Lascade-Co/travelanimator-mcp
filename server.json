@@ -1,0 +1,40 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "com.travelanimator/mcp",
+  "description": "Author and render Travel Animator route videos: plan a route, style the animation, render it to an MP4 on this machine.",
+  "version": "1.0.1",
+  "websiteUrl": "https://travelanimator.com",
+  "repository": {
+    "url": "https://github.com/Lascade-Co/travelanimator-mcp",
+    "source": "github"
+  },
+  "packages": [
+    {
+      "registryType": "pypi",
+      "registryBaseUrl": "https://pypi.org",
+      "identifier": "travel-animator",
+      "version": "1.0.1",
+      "runtimeHint": "uvx",
+      "transport": {
+        "type": "stdio"
+      },
+      "runtimeArguments": [
+        {
+          "type": "named",
+          "name": "--from",
+          "value": "travel-animator[mcp]",
+          "isRequired": true,
+          "description": "Installs the optional MCP extra, which carries the MCP SDK."
+        }
+      ],
+      "packageArguments": [
+        {
+          "type": "positional",
+          "value": "mcp",
+          "isRequired": true,
+          "description": "The subcommand that starts the stdio MCP server."
+        }
+      ]
+    }
+  ]
+}
