@@ -1,0 +1,156 @@
+name: Publish to MCP Registry
+
+# Lists this server in the official MCP registry, from `server.json`.
+#
+# The registry hosts METADATA ONLY -- it points at the `travel-animator` package on PyPI and
+# never holds code. So this workflow publishes nothing itself; it announces a release that
+# already happened. `server.json`'s `packages[].version` must name a version that is live on
+# PyPI, or the registry's own validation rejects it.
+#
+# Ordering, which is not negotiable: a package description is baked into the built artifact,
+# so the `mcp-name:` ownership marker only reaches PyPI via a release. The upstream
+# publish-to-PyPI workflow is what bumps `server.json` here, and that bump is what triggers
+# this. See PUBLISHING.md.
+#
+# A published (name, version) pair is IMMUTABLE -- the registry refuses a re-publish of a
+# version it already has. That is why this is guarded twice: the `paths` filter keeps
+# docs-only pushes from running it at all, and the "already published" check below turns the
+# remaining no-op case into a skip rather than a red X on main.
+
+on:
+  push:
+    branches: [main]
+    # Nothing else in this repo can change what the registry stores, and a failed publish on
+    # a README typo would be pure noise.
+    paths:
+      - server.json
+      - .github/workflows/publish-mcp-registry.yml
+  workflow_dispatch:
+
+concurrency:
+  # Never cancel a publish in flight: it is a write to a registry that will not accept the
+  # same version twice, so a half-run is worse than a queued one.
+  group: publish-mcp-registry
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  publish:
+    name: Publish server.json
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    # Holds MCP_REGISTRY_DNS_KEY. An environment rather than a plain repo secret so the key
+    # can be restricted to this branch and, if wanted, gated on a reviewer -- the same shape
+    # the PyPI publish uses. Create it as `mcp-registry` in Settings -> Environments.
+    environment: mcp-registry
+    steps:
+      - uses: actions/checkout@v5
+
+      # Catches the whole class of error that cost us a failed publish once already: the
+      # description was 119 characters against a 100-character maximum, and nothing said so
+      # until the registry refused it. Cheap, and it fails in seconds.
+      - name: Validate server.json against the published schema
+        run: |
+          set -euo pipefail
+          python3 -m pip install --quiet --disable-pip-version-check check-jsonschema
+          schema_url="$(python3 -c 'import json;print(json.load(open("server.json"))["$schema"])')"
+          curl -sSfL "$schema_url" -o "$RUNNER_TEMP/server.schema.json"
+          check-jsonschema --schemafile "$RUNNER_TEMP/server.schema.json" server.json
+
+      # The registry stores metadata about a package it does not host, so it verifies the
+      # package exists and is ours before accepting. Failing here is far clearer than the
+      # registry's own "Registry validation failed for package".
+      - name: Check the PyPI release exists and carries the ownership marker
+        run: |
+          set -euo pipefail
+          name="$(jq -r '.name' server.json)"
+          pkg="$(jq -r '.packages[0].identifier' server.json)"
+          pkg_version="$(jq -r '.packages[0].version' server.json)"
+
+          if ! curl -sSfL "https://pypi.org/pypi/$pkg/$pkg_version/json" -o "$RUNNER_TEMP/pypi.json"; then
+            echo "::error::$pkg $pkg_version is not on PyPI. Release it before publishing to the registry." >&2
+            exit 1
+          fi
+
+          # Ownership proof: the registry looks for `mcp-name: <name>` in the PyPI long
+          # description, which is the package README. It is baked into the artifact, so an
+          # older release cannot be retrofitted -- only a new one carries it.
+          if ! jq -r '.info.description' "$RUNNER_TEMP/pypi.json" | grep -qF "mcp-name: $name"; then
+            echo "::error::$pkg $pkg_version does not contain 'mcp-name: $name'." >&2
+            echo "::error::The registry cannot verify ownership. Add the marker to the package README and cut a release." >&2
+            exit 1
+          fi
+          echo "$pkg $pkg_version is on PyPI and carries the marker."
+
+      # A version the registry already holds cannot be replaced, only superseded. Skipping is
+      # correct here: it means server.json was touched without a version change, e.g. an edit
+      # to the description or the argument list.
+      - name: Skip if this version is already published
+        id: check
+        run: |
+          set -euo pipefail
+          name="$(jq -r '.name' server.json)"
+          version="$(jq -r '.version' server.json)"
+          # Note the nesting: a search result is `{server: {...}, _meta: {...}}`, so the name
+          # and version live under `.server`, not on the element itself.
+          published="$(curl -sSfL "https://registry.modelcontextprotocol.io/v0/servers?search=$name" \
+            | jq -r --arg n "$name" '[.servers[]?.server | select(.name == $n) | .version] | join(" ")' || true)"
+
+          echo "declared=$version  published=${published:-<none>}"
+          if grep -qw -- "$version" <<<"$published"; then
+            echo "::notice::$name $version is already in the registry; nothing to publish."
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Install mcp-publisher
+        if: steps.check.outputs.skip == 'false'
+        run: |
+          set -euo pipefail
+          os="$(uname -s | tr '[:upper:]' '[:lower:]')"
+          arch="$(uname -m | sed 's/x86_64/amd64/;s/aarch64/arm64/')"
+          curl -sSfL "https://github.com/modelcontextprotocol/registry/releases/latest/download/mcp-publisher_${os}_${arch}.tar.gz" \
+            | tar xz mcp-publisher
+          ./mcp-publisher --version || true
+
+      # DNS auth, NOT github-oidc: OIDC only authorises the `io.github.<owner>/*` namespace,
+      # and this server is `com.travelanimator/mcp` -- a name already fixed by the marker
+      # inside the published wheel, so it cannot be swapped without another release.
+      #
+      # MCP_REGISTRY_DNS_KEY is the hex-encoded Ed25519 private key seed whose public half is
+      # in the TXT record on the travelanimator.com APEX (not a `_mcp-auth` selector). See
+      # PUBLISHING.md for generating and rotating it.
+      - name: Authenticate to the MCP Registry
+        if: steps.check.outputs.skip == 'false'
+        env:
+          MCP_REGISTRY_DNS_KEY: ${{ secrets.MCP_REGISTRY_DNS_KEY }}
+        run: |
+          set -euo pipefail
+          if [[ -z "${MCP_REGISTRY_DNS_KEY:-}" ]]; then
+            echo "::error::MCP_REGISTRY_DNS_KEY is not set in the 'mcp-registry' environment." >&2
+            exit 1
+          fi
+          ./mcp-publisher login dns \
+            --domain travelanimator.com \
+            --private-key "$MCP_REGISTRY_DNS_KEY"
+
+      - name: Publish
+        if: steps.check.outputs.skip == 'false'
+        run: ./mcp-publisher publish
+
+      - name: Summary
+        if: always()
+        run: |
+          {
+            echo "### MCP Registry"
+            echo
+            echo "- server: \`$(jq -r '.name' server.json)\`"
+            echo "- version: \`$(jq -r '.version' server.json)\`"
+            echo "- package: \`$(jq -r '.packages[0].identifier' server.json)@$(jq -r '.packages[0].version' server.json)\` (PyPI)"
+            if [[ "${{ steps.check.outputs.skip }}" == "true" ]]; then
+              echo "- result: skipped, already published"
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
