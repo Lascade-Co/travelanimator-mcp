@@ -365,7 +365,7 @@
       <li class="chip"><b>34</b> tools, annotated</li>
     </ul>
 
-    <p class="summary"><span><b>7</b> done</span><span><b>3</b> partial</span><span><b>4</b> outstanding</span><span>verified against the packed 1.0.3 bundle, 20 Aug 2026</span></p>
+    <p class="summary"><span><b>7</b> done</span><span><b>5</b> partial</span><span><b>2</b> outstanding</span><span>verified against the packed 1.0.3 bundle, 20 Aug 2026</span></p>
 
     <p class="provenance">Values here were read out of the published <code>travel_animator-1.0.3</code> wheel, not assumed: console script <code>tada_render.cli:main</code>, extras <code>mcp</code> &rarr; <code>jsonschema</code>/<code>mcp</code>/<code>posthog</code>, credentials at <code>${XDG_CONFIG_HOME:-~/.config}/tada/credentials.json</code> (mode 0600).</p>
   </header>
@@ -375,7 +375,7 @@
     <div class="pin gate">00</div>
     <section class="step">
       <h2>Send the email before you build</h2>
-      <span class="status todo">Awaiting reply</span>
+      <span class="status part">Proceeding without reply</span>
       <p>Two policy questions decide whether any of this ships. Ask <a href="mailto:mcp-review@anthropic.com">mcp-review@anthropic.com</a> both, and wait.</p>
       <div class="note gatebox">
         <span class="label">Blocking gates</span>
@@ -522,7 +522,7 @@ mcpb info travel-animator-1.0.3.mcpb</code></pre></div>
     <div class="pin gate">09</div>
     <section class="step">
       <h2>Privacy policy</h2>
-      <span class="status part">Live, one gap</span>
+      <span class="status part">Live, retention unstated</span>
       <div class="note gatebox">
         <span class="label">Rejection gate</span>
         <p>Missing or incomplete privacy policies result in immediate rejection.</p>
@@ -554,19 +554,28 @@ mcpb info travel-animator-1.0.3.mcpb</code></pre></div>
     <div class="pin">11</div>
     <section class="step">
       <h2>Prepare the reviewer's account</h2>
-      <span class="status todo">Not started</span>
-      <p>Test credentials must be a <strong>fully populated</strong> account, and yours must be <strong>premium</strong> — a free account cannot render, which is the entire product.</p>
-      <p>Populate it with saved routes so <code>list_account_routes</code> and <code>load_account_route</code> return real data. The instructions are now short: install the bundle, ask Claude to log in with the reviewer's email, paste the code from that email, then run the three prompts from <code>examples/prompts.md</code>.</p>
-      <p>Give the reviewer an address they can actually receive mail at — the sign-in link goes to it, so a shared inbox beats a personal one.</p>
+      <span class="status part">Address chosen</span>
+      <p>The submission form takes the reviewer address; it does not belong in this repo. Pick a shared inbox someone on the team can read, since the sign-in link is emailed and the reviewer has to complete the login themselves.</p>
+      <p>Treat that mailbox as the credential. Login is by magic link, so the address alone grants nothing — but anyone able to read the inbox can sign in as a premium account. Give it 2FA and a password not shared with anything else.</p>
+      <p>Two things still have to be true of it. It must be <strong>premium</strong> — a free account cannot render, which is the entire product, and a reviewer whose first render is refused fails you on functional quality. And it must be <strong>populated</strong>, with saved routes, so <code>list_account_routes</code> and <code>load_account_route</code> return real data rather than empty arrays.</p>
+      <p>The instructions to write are short, now that login is conversational: install the bundle, ask Claude to log in with that address, paste the code from the email, then run the three prompts from <code>examples/prompts.md</code>.</p>
     </section>
 
     <div class="pin">12</div>
     <section class="step">
       <h2>Publish the artifact, then submit</h2>
-      <span class="status todo">Not started</span>
-      <p>Attach <code>travel-animator-1.0.3.mcpb</code> to a GitHub Release so there is a stable download URL, then submit at the desktop-extension form:</p>
+      <span class="status part">Merge pending</span>
+      <p>The bundle and its sources are on <a href="https://github.com/Lascade-Co/travelanimator-mcp/pull/4">PR #4</a>. Merge it, then tag a release and attach the packed bundle so the submission has a stable download URL:</p>
+      <div class="block"><pre><code>gh pr merge 4 --merge --delete-branch
+git checkout main &amp;&amp; git pull
+
+gh release create mcpb-v1.0.3 mcpb/travel-animator-1.0.3.mcpb \
+  --title "MCPB bundle 1.0.3" \
+  --notes "MCP Bundle for Claude Desktop, wrapping travel-animator 1.0.3 from PyPI."</code></pre></div>
+      <p>The tag is namespaced <code>mcpb-v</code> rather than <code>v</code> deliberately: this repo carries listing metadata for several channels, and a plugin for Claude Code and Cowork is the obvious next one. A bare <code>v1.0.3</code> would leave nothing to distinguish them.</p>
+      <p>Then submit at the desktop-extension form:</p>
       <div class="block"><pre><code>https://clau.de/desktop-extention-submission</code></pre></div>
-      <p>That is Anthropic&rsquo;s own typo &mdash; use it verbatim. This route needs no Team or Enterprise organization, unlike the remote-connector portal. In the submission, state plainly that rendering is deterministic with no generative model involved, and that the bundle ships no redistributed code.</p>
+      <p>No Team or Enterprise organisation needed for this route, unlike the remote-connector portal. State plainly that rendering is deterministic with no generative model involved, and that the bundle redistributes no code.</p>
     </section>
 
     <div class="pin">13</div>
