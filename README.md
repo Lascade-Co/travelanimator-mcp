@@ -122,7 +122,11 @@ Routes. It carries **waypoints only** — the reply's `dropped` list names what 
 (avatars, effects, extra model slots, local media, the animation settings), and your assistant
 should tell you rather than report a clean save.
 
-## Privacy
+## Privacy Policy
+
+The full policy — covering the apps, the website and this package — is at
+[travelanimator.com/privacy-policy](https://www.travelanimator.com/privacy-policy); it has a
+section of its own for the MCP server and CLI. What follows is that section in brief.
 
 Usage analytics are **opt-in and off until you turn them on**. Nothing is collected before
 that, and nothing at all is collected outside the MCP server.
@@ -199,5 +203,6 @@ The documentation and examples *in this repository* are MIT — see [LICENSE](LI
 
 [PyPI](https://pypi.org/project/travel-animator/) ·
 [travelanimator.com](https://travelanimator.com) ·
+[Privacy](https://www.travelanimator.com/privacy-policy) ·
 [iOS](https://apps.apple.com/app/id6462844561) ·
 [Android](https://play.google.com/store/apps/details?id=com.travelanimator.routemap)

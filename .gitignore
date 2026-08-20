@@ -1,0 +1,15 @@
+# Registry signing key -- the Ed25519 seed whose public half is the TXT record
+# on travelanimator.com. Never commit; see PUBLISHING.md.
+key.pem
+
+# MCPB build output. Cut from a release, not tracked.
+mcpb/*.mcpb
+
+# Written by `uv run` in the bundle directory. Deliberately not shipped either --
+# see mcpb/.mcpbignore.
+mcpb/uv.lock
+mcpb/.venv/
+
+# Editors
+.idea/
+.DS_Store

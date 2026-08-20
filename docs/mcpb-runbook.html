@@ -1,0 +1,621 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Travel Animator MCPB</title>
+<meta name="description" content="Maintainer runbook for shipping travel-animator as an MCP Bundle for Claude Desktop, using the uv server type.">
+<style>
+  /* ---------- reset ---------- */
+  *, *::before, *::after { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body { margin: 0; }
+  h1, h2, p, ul, ol, pre, figure { margin: 0; }
+  ul, ol { padding: 0; }
+
+  /* ---------- tokens: light ---------- */
+  :root {
+    --paper:      #EBEEF2;
+    --card:       #F7F9FB;
+    --card-sunk:  #E3E8EE;
+    --ink:        #101720;
+    --ink-2:      #4A5765;
+    --ink-3:      #79879A;
+    --rule:       #CFD8E2;
+    --route:      #1B6FE0;
+    --gate:       #B4531B;
+    --gate-soft:  #F5E3D6;
+    --code-bg:    #101720;
+    --code-ink:   #D6DEE8;
+    --shadow:     0 1px 2px rgba(16,23,32,.06), 0 8px 24px -16px rgba(16,23,32,.28);
+
+    --display: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua", Georgia, serif;
+    --body: -apple-system, BlinkMacSystemFont, "Segoe UI Variable Text", "Segoe UI", system-ui, sans-serif;
+    --mono: ui-monospace, "SF Mono", SFMono-Regular, "Cascadia Code", Menlo, Consolas, monospace;
+  }
+
+  /* ---------- tokens: dark ---------- */
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --paper:      #0B1017;
+      --card:       #131C25;
+      --card-sunk:  #0F1720;
+      --ink:        #DFE6ED;
+      --ink-2:      #9EAEBF;
+      --ink-3:      #6C7E91;
+      --rule:       #24313E;
+      --route:      #6BA6FF;
+      --gate:       #E1934F;
+      --gate-soft:  #33210F;
+      --code-bg:    #060A0F;
+      --code-ink:   #C7D2DE;
+      --shadow:     0 1px 2px rgba(0,0,0,.5), 0 10px 30px -18px rgba(0,0,0,.8);
+    }
+  }
+
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--body);
+    font-size: 16.5px;
+    line-height: 1.65;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .wrap {
+    max-width: 50rem;
+    margin: 0 auto;
+    padding: clamp(2rem, 6vw, 4.5rem) clamp(1.1rem, 4vw, 2rem) 5rem;
+  }
+
+  /* ---------- masthead ---------- */
+  .eyebrow {
+    font-family: var(--mono);
+    font-size: .7rem;
+    letter-spacing: .16em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+    margin-bottom: 1.1rem;
+    display: flex;
+    align-items: center;
+    gap: .6rem;
+  }
+  .eyebrow::after { content: ""; flex: 1; height: 1px; background: var(--rule); }
+
+  h1 {
+    font-family: var(--display);
+    font-weight: 600;
+    font-size: clamp(2.2rem, 6.5vw, 3.4rem);
+    line-height: 1.05;
+    letter-spacing: -.015em;
+    text-wrap: balance;
+    margin-bottom: 1rem;
+  }
+  .standfirst {
+    font-size: 1.12rem;
+    color: var(--ink-2);
+    max-width: 38rem;
+    margin-bottom: 2rem;
+  }
+  .standfirst strong { color: var(--ink); font-weight: 600; }
+
+  .chips { display: flex; flex-wrap: wrap; gap: .5rem; margin-bottom: 1.25rem; list-style: none; }
+  .chip {
+    display: flex;
+    align-items: baseline;
+    gap: .45rem;
+    background: var(--card);
+    border: 1px solid var(--rule);
+    border-radius: 2px;
+    padding: .4rem .6rem;
+    font-family: var(--mono);
+    font-size: .74rem;
+    font-variant-numeric: tabular-nums;
+    color: var(--ink-2);
+  }
+  .chip b { color: var(--ink); font-weight: 600; }
+
+  .provenance {
+    font-size: .85rem;
+    color: var(--ink-3);
+    border-left: 2px solid var(--route);
+    padding: .1rem 0 .1rem .8rem;
+    margin-bottom: 3.25rem;
+  }
+  .provenance code { font-size: .82em; }
+
+  /* ---------- the route ---------- */
+  .route {
+    position: relative;
+    display: grid;
+    grid-template-columns: 2.5rem 1fr;
+    column-gap: clamp(.9rem, 3vw, 1.6rem);
+    row-gap: 2.75rem;
+  }
+  .route::before {
+    content: "";
+    position: absolute;
+    left: 1.25rem;
+    top: .9rem;
+    bottom: 3rem;
+    width: 2px;
+    margin-left: -1px;
+    background: repeating-linear-gradient(to bottom, var(--route) 0 6px, transparent 6px 12px);
+    opacity: .5;
+  }
+
+  .pin {
+    position: relative;
+    z-index: 1;
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    background: var(--card);
+    border: 2px solid var(--route);
+    color: var(--route);
+    font-family: var(--mono);
+    font-size: .82rem;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+  }
+  .pin.gate { border-color: var(--gate); background: var(--gate); color: var(--card); }
+  .pin.final { background: var(--route); color: var(--card); }
+
+  .step > h2 {
+    font-family: var(--display);
+    font-weight: 600;
+    font-size: 1.5rem;
+    line-height: 1.2;
+    letter-spacing: -.01em;
+    text-wrap: balance;
+    margin: .25rem 0 .7rem;
+  }
+  .step > p { margin-bottom: .9rem; }
+  .step > p:last-child { margin-bottom: 0; }
+  .step ul, .step ol { margin-bottom: 1rem; padding-left: 1.25rem; }
+  .step li { margin-bottom: .4rem; }
+  .step li:last-child { margin-bottom: 0; }
+
+  .filename {
+    font-family: var(--mono);
+    font-size: .74rem;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+    margin-bottom: .4rem;
+  }
+
+  /* ---------- code ---------- */
+  .block { position: relative; margin-bottom: 1.1rem; }
+  pre {
+    background: var(--code-bg);
+    color: var(--code-ink);
+    border-radius: 3px;
+    padding: 1rem 1.1rem;
+    overflow-x: auto;
+    font-family: var(--mono);
+    font-size: .8rem;
+    line-height: 1.7;
+    tab-size: 2;
+  }
+  pre code { font-family: inherit; }
+  .copy {
+    position: absolute;
+    top: .5rem;
+    right: .5rem;
+    font-family: var(--mono);
+    font-size: .66rem;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: var(--code-ink);
+    background: rgba(255,255,255,.07);
+    border: 1px solid rgba(255,255,255,.16);
+    border-radius: 2px;
+    padding: .25rem .5rem;
+    cursor: pointer;
+    opacity: 0;
+    transition: opacity .15s ease, background .15s ease;
+  }
+  .block:hover .copy, .copy:focus-visible { opacity: 1; }
+  .copy:hover { background: rgba(255,255,255,.16); }
+  @media (hover: none) { .copy { opacity: 1; } }
+
+  code:not(pre code) {
+    font-family: var(--mono);
+    font-size: .84em;
+    background: var(--card-sunk);
+    border: 1px solid var(--rule);
+    border-radius: 2px;
+    padding: .08em .3em;
+    word-break: break-word;
+  }
+
+  /* ---------- callouts ---------- */
+  .note {
+    background: var(--card);
+    border: 1px solid var(--rule);
+    border-left: 3px solid var(--route);
+    border-radius: 2px;
+    padding: .9rem 1.05rem;
+    margin-bottom: 1.1rem;
+    font-size: .95rem;
+  }
+  .note.gatebox { border-left-color: var(--gate); background: var(--gate-soft); }
+  .note > :first-child { margin-top: 0; }
+  .note > :last-child { margin-bottom: 0; }
+  .note .label {
+    display: block;
+    font-family: var(--mono);
+    font-size: .68rem;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    color: var(--gate);
+    margin-bottom: .4rem;
+  }
+  .note.gatebox code { background: transparent; border-color: transparent; padding: 0; }
+  .step s, .note s { color: var(--ink-3); text-decoration-thickness: 1px; }
+  .note .label.ok { color: var(--route); }
+  .pin.done { background: var(--route); border-color: var(--route); color: var(--card); }
+  .status {
+    display: inline-block;
+    font-family: var(--mono);
+    font-size: .62rem;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    border: 1px solid currentColor;
+    border-radius: 2px;
+    padding: .1rem .4rem;
+    margin: 0 0 .8rem;
+  }
+  .status.done { color: var(--route); }
+  .status.part { color: var(--gate); }
+  .status.todo { color: var(--ink-3); }
+  .summary {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .35rem .9rem;
+    font-family: var(--mono);
+    font-size: .74rem;
+    color: var(--ink-2);
+    margin: 0 0 1.25rem;
+    padding: .55rem .7rem;
+    background: var(--card);
+    border: 1px solid var(--rule);
+    border-radius: 2px;
+  }
+  .summary b { color: var(--ink); }
+  .note ol { margin-top: .5rem; padding-left: 1.2rem; }
+
+  a { color: var(--route); text-decoration-thickness: 1px; text-underline-offset: 2px; }
+  a:focus-visible, .copy:focus-visible { outline: 2px solid var(--route); outline-offset: 2px; }
+
+  /* ---------- closing ---------- */
+  .closer {
+    margin-top: 4rem;
+    padding: 1.6rem 1.7rem;
+    background: var(--card);
+    border: 1px solid var(--rule);
+    border-radius: 3px;
+    box-shadow: var(--shadow);
+  }
+  .closer h2 {
+    font-family: var(--display);
+    font-size: 1.35rem;
+    font-weight: 600;
+    margin-bottom: .7rem;
+    letter-spacing: -.01em;
+  }
+  .closer p { margin-bottom: .9rem; }
+  .closer p:last-child { margin-bottom: 0; }
+
+  footer {
+    margin-top: 3rem;
+    padding-top: 1.2rem;
+    border-top: 1px solid var(--rule);
+    font-size: .82rem;
+    color: var(--ink-3);
+  }
+  footer p { margin-bottom: .8rem; }
+  footer ul { list-style: none; display: flex; flex-wrap: wrap; gap: .4rem 1.1rem; margin-top: .6rem; }
+
+  @media (max-width: 34rem) {
+    .route { grid-template-columns: 2rem 1fr; }
+    .route::before { left: 1rem; }
+    .pin { width: 2rem; height: 2rem; font-size: .72rem; }
+    .step > h2 { font-size: 1.3rem; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    * { transition-duration: .01ms !important; }
+  }
+
+  /* ---------- print ---------- */
+  @media print {
+    :root {
+      --paper: #fff; --card: #fff; --card-sunk: #fff;
+      --ink: #000; --ink-2: #333; --ink-3: #555; --rule: #bbb;
+      --route: #14508f; --gate: #8a3d12; --gate-soft: #fff;
+      --code-bg: #f4f4f4; --code-ink: #000; --shadow: none;
+    }
+    body { font-size: 10.5pt; }
+    .wrap { max-width: none; padding: 0; }
+    .copy { display: none; }
+    pre { border: 1px solid var(--rule); white-space: pre-wrap; word-break: break-word; }
+    .step, .note, .closer { break-inside: avoid; }
+    .route { row-gap: 1.5rem; }
+    a { color: inherit; text-decoration: none; }
+    a[href^="http"]::after { content: " (" attr(href) ")"; font-size: .8em; color: #555; word-break: break-all; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <p class="eyebrow">Maintainer runbook</p>
+    <h1>Travel Animator MCPB</h1>
+    <p class="standfirst">Shipping <strong>travel-animator</strong> as an MCP Bundle for Claude Desktop, using the <code>uv</code> server type &mdash; dependencies declared, not vendored, so the bundle stays about 100&nbsp;KB instead of carrying an 86&nbsp;MB wheel.</p>
+
+    <ul class="chips">
+      <li class="chip"><b>0.4</b> manifest version</li>
+      <li class="chip"><b>uv</b> server type</li>
+      <li class="chip"><b>~100 KB</b> bundle</li>
+      <li class="chip"><b>3.12+</b> python</li>
+      <li class="chip"><b>4</b> platform wheels</li>
+      <li class="chip"><b>34</b> tools, annotated</li>
+    </ul>
+
+    <p class="summary"><span><b>7</b> done</span><span><b>3</b> partial</span><span><b>4</b> outstanding</span><span>verified against the packed 1.0.3 bundle, 20 Aug 2026</span></p>
+
+    <p class="provenance">Values here were read out of the published <code>travel_animator-1.0.3</code> wheel, not assumed: console script <code>tada_render.cli:main</code>, extras <code>mcp</code> &rarr; <code>jsonschema</code>/<code>mcp</code>/<code>posthog</code>, credentials at <code>${XDG_CONFIG_HOME:-~/.config}/tada/credentials.json</code> (mode 0600).</p>
+  </header>
+
+  <div class="route">
+
+    <div class="pin gate">00</div>
+    <section class="step">
+      <h2>Send the email before you build</h2>
+      <span class="status todo">Awaiting reply</span>
+      <p>Two policy questions decide whether any of this ships. Ask <a href="mailto:mcp-review@anthropic.com">mcp-review@anthropic.com</a> both, and wait.</p>
+      <div class="note gatebox">
+        <span class="label">Blocking gates</span>
+        <ol>
+          <li>Does the non-waivable MCPB open-source clause apply to a bundle whose only contents are a manifest and a dependency declaration, where the server itself is a limited-use wheel the host fetches from PyPI?</li>
+          <li>Confirm that deterministic video rendering &mdash; map tiles plus a fixed 3D asset catalogue, no generative model &mdash; sits outside the &ldquo;generate video via AI models&rdquo; prohibition.</li>
+        </ol>
+      </div>
+      <p>A no on either makes every step below wasted work.</p>
+    </section>
+
+    <div class="pin done">01</div>
+    <section class="step">
+      <h2>Install the CLI</h2>
+      <span class="status done">Done</span>
+      <div class="block"><pre><code>npm install -g @anthropic-ai/mcpb
+mcpb --version</code></pre></div>
+    </section>
+
+    <div class="pin done">02</div>
+    <section class="step">
+      <h2>Scaffold inside the repo</h2>
+      <span class="status done">Done</span>
+      <div class="block"><pre><code>mkdir -p mcpb/src &amp;&amp; cd mcpb</code></pre></div>
+      <p>Keeping it in <code>travelanimator-mcp</code> means one repo holds <code>server.json</code>, the plugin, and the bundle.</p>
+    </section>
+
+    <div class="pin done">03</div>
+    <section class="step">
+      <h2>Declare the dependency</h2>
+      <span class="status done">Done</span>
+      <p class="filename">mcpb/pyproject.toml</p>
+      <div class="block"><pre><code>[project]
+name = "travel-animator-mcpb"
+version = "1.0.3"
+requires-python = "&gt;=3.12"
+dependencies = ["travel-animator[mcp]==1.0.3"]</code></pre></div>
+      <p>This is the whole install story for the <code>uv</code> type &mdash; no vendored packages. Pin exactly, so bundle version and wheel version cannot drift.</p>
+    </section>
+
+    <div class="pin done">04</div>
+    <section class="step">
+      <h2>Bridge to the console script</h2>
+      <span class="status done">Verified</span>
+      <p>The <code>uv</code> type wants a <code>.py</code> entry point, but the server is a console script. Three lines close the gap &mdash; the module path is verified from the wheel&rsquo;s <code>entry_points.txt</code>.</p>
+      <p class="filename">mcpb/src/server.py</p>
+      <div class="block"><pre><code>import sys
+
+from tada_render.cli import main
+
+sys.argv = ["travel-animator", "mcp"]
+raise SystemExit(main())</code></pre></div>
+    </section>
+
+    <div class="pin done">05</div>
+    <section class="step">
+      <h2>Write the manifest</h2>
+      <span class="status done">Done</span>
+      <p class="filename">mcpb/manifest.json</p>
+      <div class="block"><pre><code>{
+  "manifest_version": "0.4",
+  "name": "travel-animator",
+  "display_name": "Travel Animator",
+  "version": "1.0.3",
+  "description": "Plan a travel route, style the animation, render it to an MP4 locally.",
+  "long_description": "Describe a trip and get a video of it: the route drawing itself as it is travelled, a 3D vehicle following it, map labels, country flags and a distance badge. 34 map styles, 355 3D models, flat or globe projection, 9-60 second output.\n\nRendering is deterministic - map tiles and a fixed asset catalogue, no generative model.\n\nRequires a Travel Animator account (the same one as the mobile app). A free account can browse and author; rendering requires premium. Not supported on Intel macOS.",
+  "author": {
+    "name": "Lascade",
+    "email": "connect@travelanimator.com",
+    "url": "https://travelanimator.com"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Lascade-Co/travelanimator-mcp.git"
+  },
+  "homepage": "https://travelanimator.com",
+  "documentation": "https://github.com/Lascade-Co/travelanimator-mcp#readme",
+  "support": "https://github.com/Lascade-Co/travelanimator-mcp/issues",
+  "icon": "icon.png",
+  "license": "MIT",
+  "privacy_policies": ["https://www.travelanimator.com/privacy-policy"],
+  "keywords": ["travel", "maps", "route-animation", "video-rendering", "animation"],
+  "server": {
+    "type": "uv",
+    "entry_point": "src/server.py",
+    "mcp_config": {
+      "command": "uv",
+      "args": ["run", "--directory", "${__dirname}", "src/server.py"]
+    }
+  },
+  "compatibility": {
+    "platforms": ["darwin", "win32", "linux"],
+    "runtimes": { "python": "&gt;=3.12" }
+  }
+}</code></pre></div>
+      <p>Two things to notice. <code>privacy_policies</code> is mandatory for local connectors and its absence is an immediate rejection &mdash; see step 09. And <code>platforms</code> is OS-level with no architecture granularity, so an Intel Mac user installs successfully and then fails at dependency resolution; that is why <code>long_description</code> says so out loud.</p>
+    </section>
+
+    <div class="pin done">06</div>
+    <section class="step">
+      <h2>Exclusions and icon</h2>
+      <span class="status done">Done</span>
+      <p class="filename">mcpb/.mcpbignore</p>
+      <div class="block"><pre><code>.venv/
+server/lib/
+server/venv/
+__pycache__/
+uv.lock</code></pre></div>
+      <p>The spec is explicit that <code>uv</code> bundles must <em>not</em> ship <code>server/lib/</code> or <code>server/venv/</code>. <code>uv.lock</code> is excluded too, for a reason worth stating: running the server locally writes one, and packing it would freeze every transitive dependency at the moment you happened to test — blocking security patches until you cut and resubmit a new bundle. The wheel itself is already pinned exactly, so the lock buys nothing the pin does not. The reference <code>hello-world-uv</code> example omits it as well.</p>
+    </section>
+
+    <div class="pin done">07</div>
+    <section class="step">
+      <h2>Validate, pack, inspect</h2>
+      <span class="status done">Done</span>
+      <div class="block"><pre><code>mcpb validate .
+mcpb pack . travel-animator-1.0.3.mcpb
+mcpb info travel-animator-1.0.3.mcpb</code></pre></div>
+      <p>Measured on the real bundle: <strong>109.5 kB</strong> across four files, against the 85–88 MB wheel it resolves to at install time. <code>mcpb validate</code> also warns if the icon is not 512×512 — a warning, not a failure.</p>
+    </section>
+
+    <div class="pin">08</div>
+    <section class="step">
+      <h2>Install locally and exercise every tool</h2>
+      <span class="status part">Partly verified</span>
+      <p>A stdio probe against the packed bundle already passes: <code>uv run --directory mcpb src/server.py</code> completes an <code>initialize</code> handshake reporting <code>travel-animator-mcp 1.0.3</code> on protocol <code>2025-06-18</code>, and <code>tools/list</code> returns all 34. So the shim, the pin and the uv resolution are all sound.</p>
+      <div class="block"><pre><code>printf '%s
+%s
+%s
+' \
+ '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-06-18","capabilities":{},"clientInfo":{"name":"probe","version":"0"}}}' \
+ '{"jsonrpc":"2.0","method":"notifications/initialized"}' \
+ '{"jsonrpc":"2.0","id":2,"method":"tools/list"}' \
+ | uv run --directory mcpb src/server.py</code></pre></div>
+      <p>What is left is what the criteria actually require: install the <code>.mcpb</code> into Claude Desktop and <strong>call every one of the 34 tools</strong>, since listing a tool is not exercising it. The path worth testing hardest:</p>
+      <div class="block"><pre><code>get_capabilities → auth_status → login → complete_login
+  → create_project → create_route → update_animation_state
+  → estimate_render → render_video → await_render</code></pre></div>
+      <div class="note">
+        <p>Since 1.0.2 the login flow is conversational, so no terminal is needed. Credentials still land in <code>${XDG_CONFIG_HOME:-~/.config}/tada</code>, machine-wide rather than inside the bundle's uv environment, so an existing terminal login is honoured too.</p>
+      </div>
+    </section>
+
+    <div class="pin gate">09</div>
+    <section class="step">
+      <h2>Privacy policy</h2>
+      <span class="status part">Live, one gap</span>
+      <div class="note gatebox">
+        <span class="label">Rejection gate</span>
+        <p>Missing or incomplete privacy policies result in immediate rejection.</p>
+      </div>
+      <ul>
+        <li><s>Host a policy covering collection, usage and storage, third-party sharing, retention, and contact.</s> Live at <a href="https://www.travelanimator.com/privacy-policy">travelanimator.com/privacy-policy</a>, with a dedicated section for the MCP server and CLI &mdash; login, on-device storage, opt-in analytics, PostHog named as a US processor, and the never-collected list.</li>
+        <li><s>Rename the README heading to exactly <code>## Privacy Policy</code> and link the HTTPS URL from it.</s> Done.</li>
+      </ul>
+      <p>One gap left: the policy states deletion on request and that saved routes persist until deleted, but names no retention period for analytics events. Add the window PostHog is configured for &mdash; retention is one of the five topics the requirements enumerate.</p>
+    </section>
+
+    <div class="pin">10</div>
+    <section class="step">
+      <h2>Tool annotations</h2>
+      <span class="status part">Half fixed</span>
+      <p>1.0.2 introduced <code>tada_render/mcp/tool_annotations.py</code>; 1.0.3 corrected the read-only half. A live <code>tools/list</code> against the packed 1.0.3 bundle reports 34 tools, <strong>all titled</strong>, with 15 read-only hints and 5 destructive.</p>
+      <div class="note">
+        <span class="label ok">Fixed in 1.0.3</span>
+        <p><code>await_render</code>, <code>get_render_result</code> and <code>estimate_render</code> now declare <code>readOnlyHint: true</code>. This was the one that mattered most: <code>await_render</code> is called repeatedly through a render, and without the hint a ten-minute render was a stream of confirmation prompts on the product's primary flow.</p>
+      </div>
+      <div class="note gatebox">
+        <span class="label">Still declared non-destructive</span>
+        <p>Seven tools that modify existing data still report <code>destructiveHint: false</code> — <code>create_route</code>, <code>update_point</code>, <code>update_animation_state</code>, <code>set_real_route</code>, <code>render_video</code>, <code>export_project</code>, <code>save_project_to_account</code>.</p>
+        <p>Four are arguable. Three are harder to defend, because they touch data outside the project: <code>render_video</code> prunes all but the newest five renders, <code>export_project</code> overwrites a caller-chosen path, and <code>save_project_to_account</code> overwrites the account copy while dropping avatars, effects and animation settings. A false hint is an affirmative claim, not an omission — the criteria ask that annotations match actual behaviour, and these three suppress a prompt the user should see.</p>
+      </div>
+      <p>Not a blocker for submitting: every tool carries a title, and the auto-permission problem is gone. Worth folding into whatever ships next.</p>
+    </section>
+
+    <div class="pin">11</div>
+    <section class="step">
+      <h2>Prepare the reviewer's account</h2>
+      <span class="status todo">Not started</span>
+      <p>Test credentials must be a <strong>fully populated</strong> account, and yours must be <strong>premium</strong> — a free account cannot render, which is the entire product.</p>
+      <p>Populate it with saved routes so <code>list_account_routes</code> and <code>load_account_route</code> return real data. The instructions are now short: install the bundle, ask Claude to log in with the reviewer's email, paste the code from that email, then run the three prompts from <code>examples/prompts.md</code>.</p>
+      <p>Give the reviewer an address they can actually receive mail at — the sign-in link goes to it, so a shared inbox beats a personal one.</p>
+    </section>
+
+    <div class="pin">12</div>
+    <section class="step">
+      <h2>Publish the artifact, then submit</h2>
+      <span class="status todo">Not started</span>
+      <p>Attach <code>travel-animator-1.0.3.mcpb</code> to a GitHub Release so there is a stable download URL, then submit at the desktop-extension form:</p>
+      <div class="block"><pre><code>https://clau.de/desktop-extention-submission</code></pre></div>
+      <p>That is Anthropic&rsquo;s own typo &mdash; use it verbatim. This route needs no Team or Enterprise organization, unlike the remote-connector portal. In the submission, state plainly that rendering is deterministic with no generative model involved, and that the bundle ships no redistributed code.</p>
+    </section>
+
+    <div class="pin">13</div>
+    <section class="step">
+      <h2>Wire it into the release pipeline</h2>
+      <span class="status todo">Not started</span>
+      <p>The existing <code>publish-mcp-registry.yml</code> already bumps <code>server.json</code> after a PyPI release. Extend that step to also rewrite <code>mcpb/manifest.json</code>&rsquo;s <code>version</code> and <code>mcpb/pyproject.toml</code>&rsquo;s pin, then <code>mcpb pack</code> and attach the result to the release.</p>
+      <p>Same reasoning as the existing guard: the bundle must never name a version that is not live on PyPI.</p>
+    </section>
+
+  </div>
+
+  <div class="closer">
+    <h2>What the releases closed</h2>
+    <p>Two package releases were cut for this submission, and between them they removed everything that lived in the code.</p>
+    <p><strong>1.0.2 — annotations and login.</strong> Every tool gained a title. <code>login</code>, <code>complete_login</code> and <code>logout</code> became tools, so a Desktop user never opens a terminal — previously the one problem the <code>uv</code> server type could not solve, since MCPB installs with a double-click and a stdio server cannot prompt for credentials. That also made a <code>user_config</code> token field unnecessary rather than pending.</p>
+    <p><strong>1.0.3 — read-only hints.</strong> <code>await_render</code>, <code>get_render_result</code> and <code>estimate_render</code> now declare themselves read-only, so they run without a confirmation prompt on every call. The render loop was the thing this mattered to.</p>
+    <p>What remains is outside the package entirely: the two policy answers in step 00, an analytics retention window in the privacy policy, a populated premium test account, the Desktop run-through, and the submission itself. Plus the seven destructive hints in step 10, which are worth fixing but block nothing.</p>
+  </div>
+
+  <footer>
+    <p>Maintainer documentation for <a href="https://github.com/Lascade-Co/travelanimator-mcp">Lascade-Co/travelanimator-mcp</a>. See also <a href="../PUBLISHING.md">PUBLISHING.md</a> for the MCP registry pipeline, <a href="clients.md">clients.md</a>, <a href="tools.md">tools.md</a> and <a href="troubleshooting.md">troubleshooting.md</a>.</p>
+    Sources
+    <ul>
+      <li><a href="https://github.com/modelcontextprotocol/mcpb/blob/main/MANIFEST.md">MCPB manifest spec</a></li>
+      <li><a href="https://github.com/modelcontextprotocol/mcpb/blob/main/CLI.md">mcpb CLI</a></li>
+      <li><a href="https://claude.com/docs/connectors/building/review-criteria">Pre-submission checklist</a></li>
+      <li><a href="https://claude.com/docs/connectors/building/submission">Directory submission</a></li>
+      <li><a href="https://support.claude.com/en/articles/13145358-anthropic-software-directory-policy">Directory policy</a></li>
+    </ul>
+  </footer>
+</div>
+
+<script>
+  document.querySelectorAll(".block").forEach(function (block) {
+    var code = block.querySelector("code");
+    if (!code) return;
+    var btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "copy";
+    btn.textContent = "Copy";
+    btn.addEventListener("click", function () {
+      navigator.clipboard.writeText(code.textContent).then(function () {
+        btn.textContent = "Copied";
+        setTimeout(function () { btn.textContent = "Copy"; }, 1600);
+      });
+    });
+    block.appendChild(btn);
+  });
+</script>
+</body>
+</html>
