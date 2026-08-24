@@ -2,9 +2,9 @@
   "manifest_version": "0.4",
   "name": "travel-animator",
   "display_name": "Travel Animator",
-  "version": "1.0.3",
+  "version": "1.1.0",
   "description": "Plan a travel route, style the animation, render it to an MP4 locally.",
-  "long_description": "Describe a trip and get a video of it: the route drawing itself as it is travelled, a 3D vehicle following it, map labels, country flags and a distance badge. 34 map styles, 355 3D models, flat or globe projection, 9-60 second output.\n\nRendering is deterministic - map tiles and a fixed asset catalogue, no generative model.\n\nRequires a Travel Animator account (the same one as the mobile app). A free account can browse and author; rendering requires premium. Not supported on Intel macOS.",
+  "long_description": "Describe a trip and get a video of it: the route drawing itself as it is travelled, a 3D vehicle following it, map labels, country flags and a distance badge. 34 map styles, 355 3D models, flat or globe projection, 9-60 second output.\n\nRendering is deterministic - map tiles and a fixed asset catalogue, no generative model.\n\nRequires a Travel Animator account (the same one as the mobile app). A free account can browse the catalogues and author a project. Rendering costs one credit per video, charged when the render is prepared; check the balance with get_credit_balance. Not supported on Intel macOS.",
   "author": {
     "name": "Lascade",
     "email": "connect@travelanimator.com",

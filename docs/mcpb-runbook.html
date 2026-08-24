@@ -362,29 +362,30 @@
       <li class="chip"><b>~100 KB</b> bundle</li>
       <li class="chip"><b>3.12+</b> python</li>
       <li class="chip"><b>4</b> platform wheels</li>
-      <li class="chip"><b>34</b> tools, annotated</li>
+      <li class="chip"><b>38</b> tools, annotated</li>
     </ul>
 
-    <p class="summary"><span><b>7</b> done</span><span><b>5</b> partial</span><span><b>2</b> outstanding</span><span>verified against the packed 1.0.3 bundle, 20 Aug 2026</span></p>
+    <p class="summary"><span><b>7</b> done</span><span><b>4</b> partial</span><span><b>3</b> outstanding</span><span>verified against the packed 1.1.0 bundle, 24 Aug 2026</span></p>
 
-    <p class="provenance">Values here were read out of the published <code>travel_animator-1.0.3</code> wheel, not assumed: console script <code>tada_render.cli:main</code>, extras <code>mcp</code> &rarr; <code>jsonschema</code>/<code>mcp</code>/<code>posthog</code>, credentials at <code>${XDG_CONFIG_HOME:-~/.config}/tada/credentials.json</code> (mode 0600).</p>
+    <p class="provenance">Values here were read out of the published <code>travel_animator-1.1.0</code> wheel, not assumed: console script <code>tada_render.cli:main</code>, extras <code>mcp</code> &rarr; <code>jsonschema</code>/<code>mcp</code>/<code>posthog</code>, credentials at <code>${XDG_CONFIG_HOME:-~/.config}/tada/credentials.json</code> (mode 0600).</p>
   </header>
 
   <div class="route">
 
     <div class="pin gate">00</div>
     <section class="step">
-      <h2>Send the email before you build</h2>
-      <span class="status part">Proceeding without reply</span>
-      <p>Two policy questions decide whether any of this ships. Ask <a href="mailto:mcp-review@anthropic.com">mcp-review@anthropic.com</a> both, and wait.</p>
+      <h2>Send the email before you submit</h2>
+      <span class="status todo">Blocking</span>
+      <p>Three policy questions now, none answered. The first two were raised before any of this was built; 1.1.0 added the third, and it is the sharpest.</p>
       <div class="note gatebox">
         <span class="label">Blocking gates</span>
         <ol>
-          <li>Does the non-waivable MCPB open-source clause apply to a bundle whose only contents are a manifest and a dependency declaration, where the server itself is a limited-use wheel the host fetches from PyPI?</li>
-          <li>Confirm that deterministic video rendering &mdash; map tiles plus a fixed 3D asset catalogue, no generative model &mdash; sits outside the &ldquo;generate video via AI models&rdquo; prohibition.</li>
+          <li><strong>Financial transactions.</strong> 1.1.0 ships <code>buy_credits</code>. The policy bars software that "transfers money, cryptocurrency, or other financial assets, or executes financial transactions on behalf of users," and one of the seven mandatory acknowledgments covers exactly this. The tool returns a Stripe checkout link and charges nothing — its own description tells the assistant to show the link and states that nothing is bought until the user finishes Stripe's page — so a strict reading puts it outside the prohibition. That reading needs confirming, not assuming.</li>
+          <li><strong>The open-source clause.</strong> Does the non-waivable MCPB clause apply to a bundle whose only contents are a manifest and a dependency declaration, where the host fetches the wheel from PyPI?</li>
+          <li><strong>AI media.</strong> Confirm deterministic rendering — map tiles and a fixed 3D catalogue, no generative model — sits outside "generate video via AI models."</li>
         </ol>
       </div>
-      <p>A no on either makes every step below wasted work.</p>
+      <p>Email <a href="mailto:mcp-review@anthropic.com">mcp-review@anthropic.com</a>. A rejection on financial grounds costs a full review cycle; asking first costs a reply.</p>
     </section>
 
     <div class="pin done">01</div>
@@ -410,9 +411,9 @@ mcpb --version</code></pre></div>
       <p class="filename">mcpb/pyproject.toml</p>
       <div class="block"><pre><code>[project]
 name = "travel-animator-mcpb"
-version = "1.0.3"
+version = "1.1.0"
 requires-python = "&gt;=3.12"
-dependencies = ["travel-animator[mcp]==1.0.3"]</code></pre></div>
+dependencies = ["travel-animator[mcp]==1.1.0"]</code></pre></div>
       <p>This is the whole install story for the <code>uv</code> type &mdash; no vendored packages. Pin exactly, so bundle version and wheel version cannot drift.</p>
     </section>
 
@@ -439,9 +440,9 @@ raise SystemExit(main())</code></pre></div>
   "manifest_version": "0.4",
   "name": "travel-animator",
   "display_name": "Travel Animator",
-  "version": "1.0.3",
+  "version": "1.1.0",
   "description": "Plan a travel route, style the animation, render it to an MP4 locally.",
-  "long_description": "Describe a trip and get a video of it: the route drawing itself as it is travelled, a 3D vehicle following it, map labels, country flags and a distance badge. 34 map styles, 355 3D models, flat or globe projection, 9-60 second output.\n\nRendering is deterministic - map tiles and a fixed asset catalogue, no generative model.\n\nRequires a Travel Animator account (the same one as the mobile app). A free account can browse and author; rendering requires premium. Not supported on Intel macOS.",
+  "long_description": "Describe a trip and get a video of it: the route drawing itself as it is travelled, a 3D vehicle following it, map labels, country flags and a distance badge. 34 map styles, 355 3D models, flat or globe projection, 9-60 second output.\n\nRendering is deterministic - map tiles and a fixed asset catalogue, no generative model.\n\nRequires a Travel Animator account (the same one as the mobile app). A free account can browse the catalogues and author a project. Rendering costs one credit per video, charged when the render is prepared; check the balance with get_credit_balance. Not supported on Intel macOS.",
   "author": {
     "name": "Lascade",
     "email": "connect@travelanimator.com",
@@ -492,8 +493,8 @@ uv.lock</code></pre></div>
       <h2>Validate, pack, inspect</h2>
       <span class="status done">Done</span>
       <div class="block"><pre><code>mcpb validate .
-mcpb pack . travel-animator-1.0.3.mcpb
-mcpb info travel-animator-1.0.3.mcpb</code></pre></div>
+mcpb pack . travel-animator-1.1.0.mcpb
+mcpb info travel-animator-1.1.0.mcpb</code></pre></div>
       <p>Measured on the real bundle: <strong>109.5 kB</strong> across four files, against the 85–88 MB wheel it resolves to at install time. <code>mcpb validate</code> also warns if the icon is not 512×512 — a warning, not a failure.</p>
     </section>
 
@@ -501,7 +502,7 @@ mcpb info travel-animator-1.0.3.mcpb</code></pre></div>
     <section class="step">
       <h2>Install locally and exercise every tool</h2>
       <span class="status part">Partly verified</span>
-      <p>A stdio probe against the packed bundle already passes: <code>uv run --directory mcpb src/server.py</code> completes an <code>initialize</code> handshake reporting <code>travel-animator-mcp 1.0.3</code> on protocol <code>2025-06-18</code>, and <code>tools/list</code> returns all 34. So the shim, the pin and the uv resolution are all sound.</p>
+      <p>A stdio probe against the packed bundle already passes: <code>uv run --directory mcpb src/server.py</code> completes an <code>initialize</code> handshake reporting <code>travel-animator-mcp 1.1.0</code> on protocol <code>2025-06-18</code>, and <code>tools/list</code> returns all 38. So the shim, the pin and the uv resolution are all sound.</p>
       <div class="block"><pre><code>printf '%s
 %s
 %s
@@ -510,7 +511,7 @@ mcpb info travel-animator-1.0.3.mcpb</code></pre></div>
  '{"jsonrpc":"2.0","method":"notifications/initialized"}' \
  '{"jsonrpc":"2.0","id":2,"method":"tools/list"}' \
  | uv run --directory mcpb src/server.py</code></pre></div>
-      <p>What is left is what the criteria actually require: install the <code>.mcpb</code> into Claude Desktop and <strong>call every one of the 34 tools</strong>, since listing a tool is not exercising it. The path worth testing hardest:</p>
+      <p>What is left is what the criteria actually require: install the <code>.mcpb</code> into Claude Desktop and <strong>call every one of the 38 tools</strong>, since listing a tool is not exercising it. The path worth testing hardest:</p>
       <div class="block"><pre><code>get_capabilities → auth_status → login → complete_login
   → create_project → create_route → update_animation_state
   → estimate_render → render_video → await_render</code></pre></div>
@@ -538,7 +539,7 @@ mcpb info travel-animator-1.0.3.mcpb</code></pre></div>
     <section class="step">
       <h2>Tool annotations</h2>
       <span class="status part">Half fixed</span>
-      <p>1.0.2 introduced <code>tada_render/mcp/tool_annotations.py</code>; 1.0.3 corrected the read-only half. A live <code>tools/list</code> against the packed 1.0.3 bundle reports 34 tools, <strong>all titled</strong>, with 15 read-only hints and 5 destructive.</p>
+      <p>1.0.2 introduced <code>tada_render/mcp/tool_annotations.py</code>; 1.0.3 corrected the read-only half. A live <code>tools/list</code> against the packed 1.1.0 bundle reports 38 tools, <strong>all titled</strong>, with 18 read-only hints and 5 destructive. The four credit tools added in 1.1.0 are annotated correctly, including <code>openWorldHint</code>.</p>
       <div class="note">
         <span class="label ok">Fixed in 1.0.3</span>
         <p><code>await_render</code>, <code>get_render_result</code> and <code>estimate_render</code> now declare <code>readOnlyHint: true</code>. This was the one that mattered most: <code>await_render</code> is called repeatedly through a render, and without the hint a ten-minute render was a stream of confirmation prompts on the product's primary flow.</p>
@@ -554,11 +555,11 @@ mcpb info travel-animator-1.0.3.mcpb</code></pre></div>
     <div class="pin">11</div>
     <section class="step">
       <h2>Prepare the reviewer's account</h2>
-      <span class="status part">Address chosen</span>
-      <p>The submission form takes the reviewer address; it does not belong in this repo. Pick a shared inbox someone on the team can read, since the sign-in link is emailed and the reviewer has to complete the login themselves.</p>
-      <p>Treat that mailbox as the credential. Login is by magic link, so the address alone grants nothing — but anyone able to read the inbox can sign in as a premium account. Give it 2FA and a password not shared with anything else.</p>
-      <p>Two things still have to be true of it. It must be <strong>premium</strong> — a free account cannot render, which is the entire product, and a reviewer whose first render is refused fails you on functional quality. And it must be <strong>populated</strong>, with saved routes, so <code>list_account_routes</code> and <code>load_account_route</code> return real data rather than empty arrays.</p>
-      <p>The instructions to write are short, now that login is conversational: install the bundle, ask Claude to log in with that address, paste the code from the email, then run the three prompts from <code>examples/prompts.md</code>.</p>
+      <span class="status todo">Changed in 1.1.0</span>
+      <p>The gate moved. Rendering used to need a premium account; in 1.1.0 it costs <strong>one credit</strong>, charged server-side when the render service prepares the video, and a render fails with <code>insufficient_credits</code> at zero balance.</p>
+      <p>So the reviewer's account needs <strong>credits on it</strong>, not a plan. Put enough on for several renders — a reviewer exercising 38 tools will render more than once, and an account that runs dry mid-review reads as a broken product. Confirm with <code>get_credit_balance</code> before you hand it over.</p>
+      <p>It also needs saved routes, so <code>list_account_routes</code> and <code>load_account_route</code> return real data rather than empty arrays.</p>
+      <p>The submission form takes the reviewer address; it does not belong in this repo. Pick a shared inbox someone on the team can read, since the sign-in link is emailed and the reviewer completes the login themselves. Treat that mailbox as the credential — login is by magic link, so the address alone grants nothing, but anyone who can read the inbox can sign in to an account with credits on it. Give it 2FA and a password not shared with anything else.</p>
     </section>
 
     <div class="pin">12</div>
@@ -569,9 +570,9 @@ mcpb info travel-animator-1.0.3.mcpb</code></pre></div>
       <div class="block"><pre><code>gh pr merge 4 --merge --delete-branch
 git checkout main &amp;&amp; git pull
 
-gh release create mcpb-v1.0.3 mcpb/travel-animator-1.0.3.mcpb \
-  --title "MCPB bundle 1.0.3" \
-  --notes "MCP Bundle for Claude Desktop, wrapping travel-animator 1.0.3 from PyPI."</code></pre></div>
+gh release create mcpb-v1.1.0 mcpb/travel-animator-1.1.0.mcpb \
+  --title "MCPB bundle 1.1.0" \
+  --notes "MCP Bundle for Claude Desktop, wrapping travel-animator 1.1.0 from PyPI."</code></pre></div>
       <p>The tag is namespaced <code>mcpb-v</code> rather than <code>v</code> deliberately: this repo carries listing metadata for several channels, and a plugin for Claude Code and Cowork is the obvious next one. A bare <code>v1.0.3</code> would leave nothing to distinguish them.</p>
       <p>Then submit at the desktop-extension form:</p>
       <div class="block"><pre><code>https://clau.de/desktop-extention-submission</code></pre></div>
