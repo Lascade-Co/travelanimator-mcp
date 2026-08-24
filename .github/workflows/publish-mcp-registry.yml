@@ -95,11 +95,25 @@ jobs:
           version="$(jq -r '.version' server.json)"
           # Note the nesting: a search result is `{server: {...}, _meta: {...}}`, so the name
           # and version live under `.server`, not on the element itself.
-          published="$(curl -sSfL "https://registry.modelcontextprotocol.io/v0/servers?search=$name" \
-            | jq -r --arg n "$name" '[.servers[]?.server | select(.name == $n) | .version] | join(" ")' || true)"
+          #
+          # One version PER LINE, and the comparison done by jq rather than by the shell.
+          # This was `join(" ")` fed to `grep -qw -- "$version"`, which silently skipped
+          # 1.1.0: grep reads the pattern as a REGEX, `.` matches any character, so `1.1.0`
+          # matched the substring `1 1.0` spanning the gap between `1.0.1` and `1.0.2` in
+          # `1.0.1 1.0.2 1.0.3 1.0.4`. `-w` does not help -- that match is delimited by `.`
+          # on both sides, which are not word characters. The run went green, announced the
+          # version was already listed, and published nothing. A version comparison must be
+          # an equality test on whole strings; anything that reads a version as a pattern is
+          # a latent bug waiting for the first release whose digits happen to line up.
+          curl -sSfL "https://registry.modelcontextprotocol.io/v0/servers?search=$name" \
+            | jq -r --arg n "$name" '.servers[]?.server | select(.name == $n) | .version' \
+            > "$RUNNER_TEMP/published.txt" || true
 
-          echo "declared=$version  published=${published:-<none>}"
-          if grep -qw -- "$version" <<<"$published"; then
+          echo "declared=$version"
+          echo "published:"; sed 's/^/  /' "$RUNNER_TEMP/published.txt"
+
+          # -x whole line, -F fixed string: no metacharacter can widen this.
+          if grep -qxF -- "$version" "$RUNNER_TEMP/published.txt"; then
             echo "::notice::$name $version is already in the registry; nothing to publish."
             echo "skip=true" >> "$GITHUB_OUTPUT"
           else
