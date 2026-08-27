@@ -55,19 +55,31 @@ release.
 
 ## Channel tags
 
-Every configuration we publish carries a `TADA_SOURCE` environment variable naming the place
-it came from. It exists because nothing else can tell our channels apart: they all ship the
-same `uvx --from travel-animator[mcp] travel-animator mcp`, so the install shape and the MCP
-client name are identical whichever listing the user read. The tag records **which snippet was
-copied** — nothing more, and nothing about the user.
+Every configuration we publish names the place it came from. It exists because nothing else
+can tell our channels apart: they all ship the same
+`uvx --from travel-animator[mcp] travel-animator mcp`, so the install shape and the MCP client
+name are identical whichever listing the user read. The tag records **which configuration
+started the server** — nothing more, and nothing about the user.
 
-| Value | Where it is set |
-| --- | --- |
-| `mcp-registry` | [`server.json`](server.json) — the registry entry **and every directory that mirrors it** |
-| `mcpb` | [`mcpb/manifest.json`](mcpb/manifest.json) — the Claude Desktop bundle |
-| `readme` | [`README.md`](README.md) |
-| `docs` | [`docs/clients.md`](docs/clients.md) |
-| `pypi` | the package README, i.e. the PyPI project page |
+**Two mechanisms, and the difference matters.** A configuration somebody copies by hand
+carries the `TADA_SOURCE` environment variable, because that reads cleanly in a JSON block and
+the user is pasting exactly what we wrote. A configuration a MACHINE generates carries
+`--source` as an *argument* instead: arguments are load-bearing — nothing starts without `mcp`
+on the command line, so a client that installed successfully has necessarily applied them —
+while a manifest's `environmentVariables` is advisory metadata a client may silently skip. A
+channel that silently reports nothing is indistinguishable from a channel nobody used, which
+is the one failure this measurement cannot afford.
+
+| Value | Where it is set | How |
+| --- | --- | --- |
+| `mcp-registry` | [`server.json`](server.json) — the registry entry **and every directory that mirrors it** | `--source` in `packageArguments` |
+| `mcpb` | [`mcpb/src/server.py`](mcpb/src/server.py) — the Claude Desktop bundle | `--source` in the bundle's own wrapper, which replaces `sys.argv`, so neither the manifest's `args` nor its `env` can carry it |
+| `readme` | [`README.md`](README.md) | `TADA_SOURCE` |
+| `docs` | [`docs/clients.md`](docs/clients.md) | `TADA_SOURCE` |
+| `pypi` | the package README, i.e. the PyPI project page | `TADA_SOURCE` |
+
+The flag outranks the environment variable where both are present, so a generated
+configuration is never mislabelled by a stray variable in the user's shell.
 
 `unknown` (unset) and `invalid` (not a `[a-z0-9-]` slug of 32 characters or fewer) are
 reserved and must never be assigned. A `pip install` user has no configuration file for a tag
@@ -80,9 +92,15 @@ bucket reads as bigger than it is and the new listing reads as zero. Never reuse
 across two places, and never rename one: events keep the old string, and the person-level
 `first_source` is written with `$set_once`, so a rename splits one channel in two forever.
 
-Registry users receive the variable only from the next version the registry publishes. The
+Registry users receive the argument only from the next version the registry publishes. The
 workflow above skips a `(name, version)` pair the registry already holds, so editing
 `server.json` without a version change publishes nothing.
+
+**The bundle's wrapper probes before it tags.** `--source` reached `travel-animator` in 1.1.1;
+passing it to an earlier pin would not merely go unrecorded, it would stop the server from
+starting at all (argparse exits 2 on an unrecognised argument). The wrapper therefore checks
+for `analytics.set_source` — which shipped in the same release — and an older pin simply goes
+untagged. Keep that probe when the release step rewrites `mcpb/pyproject.toml`.
 
 ## Publishing by hand
 

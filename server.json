@@ -18,15 +18,6 @@
       "transport": {
         "type": "stdio"
       },
-      "environmentVariables": [
-        {
-          "name": "TADA_SOURCE",
-          "value": "mcp-registry",
-          "description": "Records that this configuration came from the MCP registry listing, so we can tell which listings are worth maintaining. Optional, and safe to remove; it carries nothing about the user or their routes.",
-          "isRequired": false,
-          "isSecret": false
-        }
-      ],
       "runtimeArguments": [
         {
           "type": "named",
@@ -42,6 +33,13 @@
           "value": "mcp",
           "isRequired": true,
           "description": "The subcommand that starts the stdio MCP server."
+        },
+        {
+          "type": "named",
+          "name": "--source",
+          "value": "mcp-registry",
+          "isRequired": true,
+          "description": "Records that this configuration came from the registry listing, so we can tell which listings are worth maintaining. It carries nothing about the user or their routes, and the server runs the same without it."
         }
       ]
     }
