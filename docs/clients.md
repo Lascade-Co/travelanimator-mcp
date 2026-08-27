@@ -74,9 +74,7 @@ env = { TADA_SOURCE = "docs" }
 Command `uvx`, args `--from travel-animator[mcp] travel-animator mcp`, and env
 `TADA_SOURCE=docs`. Or install the package and run `travel-animator mcp` directly.
 
-`TADA_SOURCE` records which set of instructions a configuration came from — here, this page —
-so we can tell which of them are worth maintaining. It is optional and safe to delete, and
-carries nothing about you or your routes.
+`TADA_SOURCE` tells us which instructions you followed. Optional — delete it if you like.
 
 ---
 

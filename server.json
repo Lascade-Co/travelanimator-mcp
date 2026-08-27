@@ -39,7 +39,7 @@
           "name": "--source",
           "value": "mcp-registry",
           "isRequired": true,
-          "description": "Records that this configuration came from the registry listing, so we can tell which listings are worth maintaining. It carries nothing about the user or their routes, and the server runs the same without it."
+          "description": "Records which listing this config came from. Optional."
         }
       ]
     }

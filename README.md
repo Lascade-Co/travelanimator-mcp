@@ -53,9 +53,7 @@ uvx travel-animator login
 
 …then `uvx travel-animator login` in a terminal.
 
-`TADA_SOURCE` records which set of instructions a configuration came from — here, this
-page — so we can tell which of them are worth maintaining. It is optional and safe to
-delete, and carries nothing about you or your routes.
+`TADA_SOURCE` tells us which instructions you followed. Optional — delete it if you like.
 
 **Already have Python?** `pip install "travel-animator[mcp]"` and use `travel-animator` as
 the `command`. Python 3.12+.
