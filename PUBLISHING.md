@@ -53,6 +53,37 @@ Auth is DNS-based because the name is `com.travelanimator/mcp`. GitHub OIDC woul
 only `io.github.lascade-co/*`, which would mean changing the marker and cutting another
 release.
 
+## Channel tags
+
+Every configuration we publish carries a `TADA_SOURCE` environment variable naming the place
+it came from. It exists because nothing else can tell our channels apart: they all ship the
+same `uvx --from travel-animator[mcp] travel-animator mcp`, so the install shape and the MCP
+client name are identical whichever listing the user read. The tag records **which snippet was
+copied** — nothing more, and nothing about the user.
+
+| Value | Where it is set |
+| --- | --- |
+| `mcp-registry` | [`server.json`](server.json) — the registry entry **and every directory that mirrors it** |
+| `mcpb` | [`mcpb/manifest.json`](mcpb/manifest.json) — the Claude Desktop bundle |
+| `readme` | [`README.md`](README.md) |
+| `docs` | [`docs/clients.md`](docs/clients.md) |
+| `pypi` | the package README, i.e. the PyPI project page |
+
+`unknown` (unset) and `invalid` (not a `[a-z0-9-]` slug of 32 characters or fewer) are
+reserved and must never be assigned. A `pip install` user has no configuration file for a tag
+to live in, so `unknown` is a large and legitimate bucket.
+
+**Adding a listing.** Give it its own value, or point it at a landing URL whose snippet
+carries one, *before* it goes live. A directory that copies `server.json` inherits
+`mcp-registry`, which means its installs are **misattributed rather than unlabelled** — the
+bucket reads as bigger than it is and the new listing reads as zero. Never reuse a value
+across two places, and never rename one: events keep the old string, and the person-level
+`first_source` is written with `$set_once`, so a rename splits one channel in two forever.
+
+Registry users receive the variable only from the next version the registry publishes. The
+workflow above skips a `(name, version)` pair the registry already holds, so editing
+`server.json` without a version change publishes nothing.
+
 ## Publishing by hand
 
 Only if the automation is unavailable.

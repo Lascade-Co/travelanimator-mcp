@@ -18,6 +18,15 @@
       "transport": {
         "type": "stdio"
       },
+      "environmentVariables": [
+        {
+          "name": "TADA_SOURCE",
+          "value": "mcp-registry",
+          "description": "Records that this configuration came from the MCP registry listing, so we can tell which listings are worth maintaining. Optional, and safe to remove; it carries nothing about the user or their routes.",
+          "isRequired": false,
+          "isSecret": false
+        }
+      ],
       "runtimeArguments": [
         {
           "type": "named",
