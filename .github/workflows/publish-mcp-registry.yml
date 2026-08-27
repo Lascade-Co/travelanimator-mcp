@@ -10,7 +10,7 @@ name: Publish to MCP Registry
 # Ordering, which is not negotiable: a package description is baked into the built artifact,
 # so the `mcp-name:` ownership marker only reaches PyPI via a release. The upstream
 # publish-to-PyPI workflow is what bumps `server.json` here, and that bump is what triggers
-# this. See PUBLISHING.md.
+# this. See the release notes in the private tada repo.
 #
 # A published (name, version) pair is IMMUTABLE -- the registry refuses a re-publish of a
 # version it already has. That is why this is guarded twice: the `paths` filter keeps
@@ -136,7 +136,7 @@ jobs:
       #
       # MCP_REGISTRY_DNS_KEY is the hex-encoded Ed25519 private key seed whose public half is
       # in the TXT record on the travelanimator.com APEX (not a `_mcp-auth` selector). See
-      # PUBLISHING.md for generating and rotating it.
+      # the private release notes for generating and rotating it.
       - name: Authenticate to the MCP Registry
         if: steps.check.outputs.skip == 'false'
         env:

@@ -14,7 +14,7 @@ The server can't prompt you itself. On a stdio server, stdin is the JSON-RPC cha
 ## Claude Code
 
 ```bash
-claude mcp add travel-animator -- uvx --from "travel-animator[mcp]" travel-animator mcp
+claude mcp add travel-animator -e TADA_SOURCE=docs -- uvx --from "travel-animator[mcp]" travel-animator mcp
 ```
 
 ## Claude Desktop
@@ -27,7 +27,8 @@ claude mcp add travel-animator -- uvx --from "travel-animator[mcp]" travel-anima
   "mcpServers": {
     "travel-animator": {
       "command": "uvx",
-      "args": ["--from", "travel-animator[mcp]", "travel-animator", "mcp"]
+      "args": ["--from", "travel-animator[mcp]", "travel-animator", "mcp"],
+      "env": { "TADA_SOURCE": "docs" }
     }
   }
 }
@@ -50,7 +51,8 @@ Restart the app. **If it fails to start, use an absolute path for `command`** â€
     "travel-animator": {
       "type": "stdio",
       "command": "uvx",
-      "args": ["--from", "travel-animator[mcp]", "travel-animator", "mcp"]
+      "args": ["--from", "travel-animator[mcp]", "travel-animator", "mcp"],
+      "env": { "TADA_SOURCE": "docs" }
     }
   }
 }
@@ -64,12 +66,15 @@ Restart the app. **If it fails to start, use an absolute path for `command`** â€
 [mcp_servers.travel-animator]
 command = "uvx"
 args = ["--from", "travel-animator[mcp]", "travel-animator", "mcp"]
+env = { TADA_SOURCE = "docs" }
 ```
 
 ## Any other stdio client
 
-Command `uvx`, args `--from travel-animator[mcp] travel-animator mcp`. Or install the package
-and run `travel-animator mcp` directly.
+Command `uvx`, args `--from travel-animator[mcp] travel-animator mcp`, and env
+`TADA_SOURCE=docs`. Or install the package and run `travel-animator mcp` directly.
+
+`TADA_SOURCE` tells us which instructions you followed. Optional â€” delete it if you like.
 
 ---
 

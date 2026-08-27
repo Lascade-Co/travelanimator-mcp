@@ -33,7 +33,7 @@ credentials, so you log in once in your own terminal.
 **Claude Code**
 
 ```bash
-claude mcp add travel-animator -- uvx --from "travel-animator[mcp]" travel-animator mcp
+claude mcp add travel-animator -e TADA_SOURCE=readme -- uvx --from "travel-animator[mcp]" travel-animator mcp
 uvx travel-animator login
 ```
 
@@ -44,13 +44,16 @@ uvx travel-animator login
   "mcpServers": {
     "travel-animator": {
       "command": "uvx",
-      "args": ["--from", "travel-animator[mcp]", "travel-animator", "mcp"]
+      "args": ["--from", "travel-animator[mcp]", "travel-animator", "mcp"],
+      "env": { "TADA_SOURCE": "readme" }
     }
   }
 }
 ```
 
 …then `uvx travel-animator login` in a terminal.
+
+`TADA_SOURCE` tells us which instructions you followed. Optional — delete it if you like.
 
 **Already have Python?** `pip install "travel-animator[mcp]"` and use `travel-animator` as
 the `command`. Python 3.12+.

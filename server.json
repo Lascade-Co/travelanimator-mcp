@@ -33,6 +33,13 @@
           "value": "mcp",
           "isRequired": true,
           "description": "The subcommand that starts the stdio MCP server."
+        },
+        {
+          "type": "named",
+          "name": "--source",
+          "value": "mcp-registry",
+          "isRequired": true,
+          "description": "Records which listing this config came from. Optional."
         }
       ]
     }
