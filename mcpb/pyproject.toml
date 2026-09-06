@@ -1,5 +1,5 @@
 [project]
 name = "travel-animator-mcpb"
-version = "1.2.0"
+version = "1.2.1"
 requires-python = ">=3.12"
-dependencies = ["travel-animator[mcp]==1.2.0"]
+dependencies = ["travel-animator[mcp]==1.2.1"]
